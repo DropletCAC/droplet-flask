@@ -58,7 +58,7 @@ def detect_leak(user, section, *, month, day):
     X_scores = clf.negative_outlier_factor_
     radius = (X_scores.max() - X_scores) / (X_scores.max() - X_scores.min())
 
-    graph_lof(X, radius)
+    #graph_lof(X, radius)
     
     indices = (np.where(radius > 0.7))
 
