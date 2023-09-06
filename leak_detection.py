@@ -5,6 +5,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.neighbors import LocalOutlierFactor
 from datetime import datetime 
+import os 
+
+os.environ["FIRESTORE_EMULATOR_HOST"]="localhost:8080"
+os.environ["GCLOUD_PROJECT"]="droplet-54c51"
 
 today = datetime.today()
 cred = credentials.Certificate("credentials.json")
@@ -58,7 +62,8 @@ def detect_leak(user, section, *, month, day):
     X_scores = clf.negative_outlier_factor_
     radius = (X_scores.max() - X_scores) / (X_scores.max() - X_scores.min())
 
-    #graph_lof(X, radius)
+    
+    graph_lof(X, radius)
     
     indices = (np.where(radius > 0.7))
 
