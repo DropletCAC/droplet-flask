@@ -4,13 +4,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.neighbors import LocalOutlierFactor
-from datetime import datetime 
-import os 
+from datetime import timedelta
 
-os.environ["FIRESTORE_EMULATOR_HOST"]="localhost:8080"
-os.environ["GCLOUD_PROJECT"]="droplet-54c51"
-
-today = datetime.today()
 cred = credentials.Certificate("credentials.json")
 default_app = firebase_admin.initialize_app(cred)
 db = firestore.client()
@@ -23,7 +18,7 @@ def prepare_data(monthly_usage):
             x = 0
             for hour in daily_usage:
                 data.append([month, day, x, int(hour)])
-                x += 1         
+                x += 1      
     return data
 
 
@@ -47,7 +42,12 @@ def graph_lof(X, radius):
     plt.show()
     
 
-def detect_leak(user, section, *, month, day):
+def add_leak(user, leak_data):
+    leak_data['leak']['date'] = leak_data['leak']['date'] + timedelta(hours=8)
+    return db.collection("users").document(user).collection("leaks").add(leak_data['leak'])
+
+
+def detect_leak(user, section, date):
     #user = BwyZV2GQN0O1DVDsGl4BAj9W5q92
     monthly_usage = db.collection("users").document(user).collection("meters").document(section).collection("usage").document("2023").get().to_dict()
     data = prepare_data(monthly_usage)
@@ -63,7 +63,7 @@ def detect_leak(user, section, *, month, day):
     radius = (X_scores.max() - X_scores) / (X_scores.max() - X_scores.min())
 
     
-    graph_lof(X, radius)
+    #graph_lof(X, radius)
     
     indices = (np.where(radius > 0.7))
 
@@ -72,24 +72,23 @@ def detect_leak(user, section, *, month, day):
    
     response = {
             "success": True,
-            "leaks": None,
+            "leak": None,
     }
         
     if df_array[indices].size > 0:
-  
-        for leak in df_array[indices]:
-            print(leak)
-            leak_data = {
-                "month": int(leak[0]),
-                "day": int(leak[1]),
-                "hour": int(leak[2]),
-                "usage": int(leak[3])
-            }
+        leak = df_array[indices][0]
+
+        leak_data = {
+            "date": date,
+            "section": section,
+            "usage": int(leak[3])
+        }
+        
+        if (int(leak[0]) == date.month) and (int(leak[1]) == date.day) and (int(leak[2]) == date.hour):
+            print(leak_data)    
+            print("leaking out the bazoonkies")
+            response['leak'] = leak_data   
             
-            if (leak_data['month'] == month) and (leak_data['day'] == day):
-                print(leak_data)    
-                print("leaking out the bazoonkies")
-                response['leaks'] = leak_data   
     print(response)
     return response
 
