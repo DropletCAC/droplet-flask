@@ -32,9 +32,9 @@ def leak():
         
         leak_data = detect_leak(user, section, leak_date)
        
-        if leak_data['leak']:
-            print("Leak detected, adding")
-            add_leak(user, leak_data)
+        # if leak_data['leak']:
+        #     print("Leak detected, adding")
+        #     add_leak(user, leak_data)
             
         return (leak_data)
     

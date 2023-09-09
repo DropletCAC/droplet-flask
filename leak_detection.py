@@ -79,7 +79,7 @@ def detect_leak(user, section, date):
         leak = df_array[indices][0]
 
         leak_data = {
-            "date": date,
+            "date": date + timedelta(hours=8),
             "section": section,
             "usage": int(leak[3])
         }
