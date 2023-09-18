@@ -63,7 +63,7 @@ def detect_leak(user, section, date):
     radius = (X_scores.max() - X_scores) / (X_scores.max() - X_scores.min())
 
     
-    #graph_lof(X, radius)
+    graph_lof(X, radius)
     
     indices = (np.where(radius > 0.7))
 
@@ -84,7 +84,9 @@ def detect_leak(user, section, date):
             "usage": int(leak[3])
         }
         
-        if (int(leak[0]) == date.month) and (int(leak[1]) == date.day) and (int(leak[2]) == date.hour):
+        print(leak)
+        print(date.hour)
+        if (int(leak[0]) == int(date.month)) and (int(leak[1]) == int(date.day)) and (int(leak[2]) == int(date.hour)):
             print(leak_data)    
             print("leaking out the bazoonkies")
             response['leak'] = leak_data   
