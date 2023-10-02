@@ -6,9 +6,6 @@ import matplotlib.pyplot as plt
 from sklearn.neighbors import LocalOutlierFactor
 from datetime import timedelta
 
-cred = credentials.Certificate("credentials.json")
-default_app = firebase_admin.initialize_app(cred)
-db = firestore.client()
 
 def prepare_data(monthly_usage):
     data = []
@@ -47,7 +44,7 @@ def add_leak(user, leak_data):
     return db.collection("users").document(user).collection("leaks").add(leak_data['leak'])
 
 
-def detect_leak(user, section, date):
+def detect_leak(db, user, section, date):
     #user = BwyZV2GQN0O1DVDsGl4BAj9W5q92
     monthly_usage = db.collection("users").document(user).collection("meters").document(section).collection("usage").document("2023").get().to_dict()
     data = prepare_data(monthly_usage)
@@ -63,7 +60,7 @@ def detect_leak(user, section, date):
     radius = (X_scores.max() - X_scores) / (X_scores.max() - X_scores.min())
 
     
-    graph_lof(X, radius)
+    #graph_lof(X, radius)
     
     indices = (np.where(radius > 0.7))
 
@@ -95,5 +92,8 @@ def detect_leak(user, section, date):
     return response
 
 if __name__ == '__main__':
-    detect_leak("BwyZV2GQN0O1DVDsGl4BAj9W5q92", "bathroom", month=9, day=3)
+    cred = credentials.Certificate("credentials.json")
+    default_app = firebase_admin.initialize_app(cred)
+    db = firestore.client()
+    detect_leak(db, "BwyZV2GQN0O1DVDsGl4BAj9W5q92", "bathroom", month=9, day=3)
     
