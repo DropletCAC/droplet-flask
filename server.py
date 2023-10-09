@@ -180,6 +180,17 @@ def setCurrentUsage():
         
         return "ok"
 
+
+@app.route('/setTankCapacity', methods=['POST'])
+def setTankCapacity():
+    if request.method == "POST":
+        user_id, bucket, volume = request.args.get('user'), request.args.get('bucket'), request.args.get('volume')
+        db.collection("users").document(user_id).collection("meters").document(bucket).set({
+            "capacity": volume, 
+        })
+        return "ok"
+      
+      
 if __name__ == "__main__":
     app.run(host="0.0.0.0")
     
