@@ -59,7 +59,8 @@ def getForecastAPI():
     response = requests.get(f"http://api.weatherapi.com/v1/forecast.json?key={WEATHERAPI_KEY}&q=95070&days=2&aqi=no&alerts=no")
     data = response.json()
     precipitation = data['forecast']['forecastday'][0]['day']['totalprecip_in']
-    return str(precipitation)
+    print(precipitation)
+    return precipitation
 
 
 def getForecastLSTM():
@@ -87,10 +88,10 @@ def getForecastLSTM():
     return predicted_values[0][0]
     
     
-@app.route('/rain', methods=['GET'])
+@app.route('/prcp', methods=['GET'])
 def rain():
     if request.method == "GET":
-        return getForecastAPI()
+        return str(round((0.9 * getForecastAPI()) + (0.1 * getForecastLSTM()), 1))
     
 
 month_data = {
