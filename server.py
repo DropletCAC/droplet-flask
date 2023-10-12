@@ -12,14 +12,24 @@ if args.emulator:
   os.environ["FIRESTORE_EMULATOR_HOST"]="localhost:8080"
   os.environ["GCLOUD_PROJECT"]="droplet-54c51"
 
+import keras
 from flask import Flask, request
+import pandas as pd
 import requests 
 import json
 from datetime import datetime, timedelta
 from leak_detection import detect_leak, add_leak
 from dotenv import load_dotenv
+from lstm import model as modelutils
+import numpy as np 
+
 load_dotenv(".env")
 
+today = datetime.now()
+year = int(today.strftime("%Y"))
+month = int(today.strftime("%m"))
+day = int(today.strftime("%d"))
+hour = int(today.strftime("%H"))
 
 app = Flask(__name__)
 WEATHERAPI_KEY = os.environ.get("WEATHERAPI_KEY")
@@ -45,21 +55,42 @@ def leak():
         return (leak_data)
     
 
-def getForecast():
+def getForecastAPI():
     response = requests.get(f"http://api.weatherapi.com/v1/forecast.json?key={WEATHERAPI_KEY}&q=95070&days=2&aqi=no&alerts=no")
     data = response.json()
-    
-    precipitation = 0
-    for forecast in data['forecast']['forecastday'][1]['hour']:
-        precipitation += forecast['precip_in']
-        
+    precipitation = data['forecast']['forecastday'][0]['day']['totalprecip_in']
     return str(precipitation)
 
 
+def getForecastLSTM():
+    model = keras.models.load_model('./lstm/model3.h5')
+    
+    past_7_days = []
+    
+    for history_day in range(day - 6, day + 1):
+      print(history_day)
+      response = requests.get(f"http://api.weatherapi.com/v1/history.json?key={WEATHERAPI_KEY}&q=95070&dt={year}-{month}-{history_day}")
+      data = response.json()['forecast']['forecastday'][0]['day']
+      past_7_days.append([data['maxtemp_f'], data['mintemp_f'], data['maxwind_mph'], data['totalprecip_in']])
+    
+    df = pd.DataFrame(past_7_days)
+    print(df)
+
+    X = df.to_numpy()
+    X_norm = (X - modelutils.mean_X) / modelutils.std_X    
+    
+    X_norm = np.array([X_norm])
+    print(X_norm)
+    predicted_values_norm = model.predict(X_norm)
+    predicted_values = modelutils.inverse_normalize_df(predicted_values_norm, modelutils.mean_y, modelutils.std_y)
+    print(predicted_values)
+    return predicted_values[0][0]
+    
+    
 @app.route('/rain', methods=['GET'])
 def rain():
     if request.method == "GET":
-        return getForecast()
+        return getForecastAPI()
     
 
 month_data = {
@@ -168,10 +199,6 @@ def setCurrentUsage():
             "currentUsage": usage, 
         })
         
-        today = datetime.now()
-        month = int(today.strftime("%m"))
-        day = int(today.strftime("%d"))
-        hour = int(today.strftime("%H"))
         data = generateZeroes(month, day, hour + 1)
         data[str(month)][str(day)][hour] = usage 
 
@@ -185,8 +212,9 @@ def setCurrentUsage():
 def setTankCapacity():
     if request.method == "POST":
         user_id, bucket, volume = request.args.get('user'), request.args.get('bucket'), request.args.get('volume')
-        db.collection("users").document(user_id).collection("meters").document(bucket).set({
-            "capacity": volume, 
+        print(user_id, bucket, volume)
+        db.collection("users").document(user_id).collection("buckets").document(bucket).update({
+            "currentCapacity": round(float(volume), 1), 
         })
         return "ok"
       
