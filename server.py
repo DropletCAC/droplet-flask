@@ -89,9 +89,9 @@ def getForecastLSTM():
     
     
 @app.route('/prcp', methods=['GET'])
-def rain():
+def prcp():
     if request.method == "GET":
-        return str(round((0.9 * getForecastAPI()) + (0.1 * getForecastLSTM()), 1))
+        return json.dumps({"prcp_in": str(round((0.8 * getForecastAPI()) + (0.2 * getForecastLSTM()), 1))})
     
 
 month_data = {
