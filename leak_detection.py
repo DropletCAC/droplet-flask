@@ -14,14 +14,13 @@ def prepare_data(monthly_usage):
         for day, daily_usage in value.items():
             x = 0
             for hour in daily_usage:
-                data.append([month, day, x, int(hour)])
+                data.append([month, day, x, float(hour)])
                 x += 1      
     return data
 
 
 def graph_lof(X, radius):
     plt.scatter(X[:, 0], X[:, 1], color="k", s=3.0, label="Data points")
-
 
     scatter = plt.scatter(
         X[:, 0],
@@ -33,9 +32,11 @@ def graph_lof(X, radius):
     )
     
     plt.axis("tight")
-    plt.xlim((-5, 30))
-    plt.ylim((0, 100))
+    plt.xlim((5, 20))
+    plt.ylim((0, 15))
     plt.title("Local Outlier Factor (LOF)")
+    plt.xlabel("Hour (0-23)")
+    plt.ylabel("Water Usage (gal)")
     plt.show()
     
 
